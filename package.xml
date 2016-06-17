@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>sar_robot_simulator</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>Simulates, in a very simple way, a robot for SAR Year5 study 
       game node and translation node testing.</description>
 

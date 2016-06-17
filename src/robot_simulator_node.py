@@ -28,6 +28,9 @@ import rospy # ROS
 from sar_robot_command_msgs.msg import RobotCommand # ROS msgs
 from sar_robot_command_msgs.msg import RobotState # ROS msgs
 from std_msgs.msg import Header # standard ROS Header
+import datetime # for getting time deltas for timeouts
+import time # for sleep statements
+import signal # for catching SIGINT
 
 # The SAR robot simulator node simulates a robot for the SAR Year5 study. It
 # receives RobotCommand messages, sleeps to simulate executing speech and
@@ -39,6 +42,7 @@ class robot_simulator_node():
     def __init__(self):
         """ Initialize anything that needs initialization """
         pass
+
 
     def run_robot_simulator_node(self):
         """ wait for robot commands and pass them on """
@@ -54,10 +58,36 @@ class robot_simulator_node():
         # publish status messages to /robot_state topic
         self.state_pub = rospy.Publisher('robot_state', RobotState,
                 queue_size = 10)
- 
-        # keep python from exiting until this node is stopped
-        # TODO replace with a loop where we send RobotState messages
-        rospy.spin()
+
+        # set up flags
+        self.doing_action = False
+        self.playing_sound = False
+        # flag to indicate whether we should exit
+        self.stop = False
+
+        # set up signal handler to catch SIGINT (e.g., ctrl-c)
+        signal.signal(signal.SIGINT, self.signal_handler)
+
+        # main loop
+        while not self.stop:
+            # check flags to see if we should switch their state
+            if (self.doing_action or self.playing_sound) and \
+                datetime.datetime.now() - self.start_time >= self.timeout:
+                self.doing_action = False
+                self.playing_sound = False
+
+            # send state message
+            self.send_state_msg()
+
+            # sleep a little
+            time.sleep(1)
+
+
+    def signal_handler(self, sig, frame):
+        """ Handle signals caught """
+        if sig == signal.SIGINT:
+            rospy.loginfo("Got keyboard interrupt! Exiting.")
+            self.stop = True
 
 
     def on_robot_command_msg(self, data):
@@ -65,17 +95,55 @@ class robot_simulator_node():
         that take time. """
         rospy.loginfo("Got message:\n " + str(data))
         # do different things based on the command 
+
+        # SLEEP command
         if data.command == RobotCommand.SLEEP:
             # do nothing, set doing_action and playing_sound to false
-            pass
+            # TODO change if it turns out that sleeping is considered
+            # an action (e.g., if a sleep animation is playing)
+            self.doing_action = False
+            self.playing_sound = False
+
+        # WAKEUP command
         elif data.command == RobotCommand.WAKEUP:
-            # do nothing, set doing_action and playing_sound to false
-            pass
+            # assume a short wakeup behavior with sound and action
+            # is played on waking up
+            self.doing_action = True
+            self.playing_sound = True
+
+            # set the timeout for the sound and action flags to an
+            # arbitrarily picked value of 2 seconds
+            self.timeout = datetime.timedelta(seconds=2)
+            self.start_time = datetime.datetime.now()
+
+        # DO command
         elif data.command == RobotCommand.DO:
-            # If the command contains <>, there's an action.
-            # Set doing_action and/or playing_sound to true, then
-            # sleep/wait and send state messages periodically
-            pass
+            # TODO Right now, we set the sound and action flags for
+            # the whole arbitrarily set time. One could do more
+            # sophisticated parsing of DO commands, such that command
+            # flags (e.g., blocking or non-blocking actions) are taken
+            # into account. Then the action flag could be set only for
+            # certain times, rather than the whole time.
+
+            # If the command contains angle brackets <>, there's an
+            # action for the robot to do.
+            if "<" in data.command:
+                self.doing_action = True
+
+            # If the start/end of the string are not angle brackets,
+            # or, if they are but there are multiple sets of brackets,
+            # assume we probably have speech too
+            if (not data.command.startswith("<") \
+                    or not data.command.endswith(">")) \
+                or (data.command.startswith("<") \
+                        and data.command.endswith(">") \
+                        and data.command.count("<") > 1):
+                self.playing_sound = True
+
+            # set the timeout for the sound and action flags to an
+            # arbitrarily picked value of 5 seconds
+            self.timeout = datetime.timedelta(seconds=5)
+            self.start_time = datetime.datetime.now()
 
 
     def send_state_msg(self):
