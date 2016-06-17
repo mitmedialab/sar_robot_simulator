@@ -4,7 +4,7 @@ A ROS package that (in a very simple way) simulates a robot for SAR Year5 Study
 game node and translation node testing.
 
 This node will receive RobotCommand messages, sleep to simulate executing
-speech and action commands that take time, and publish RobotState commands to
+speech and action commands that take time, and publish RobotState messages to
 indicate whether it is currently "speaking" or "doing actions".
 
 ## Configure and run

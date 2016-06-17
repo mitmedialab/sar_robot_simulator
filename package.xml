@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package>
+  <name>sar_robot_simulator</name>
+  <version>0.0.0</version>
+  <description>Simulates, in a very simple way, a robot for SAR Year5 study 
+      game node and translation node testing.</description>
+
+  <maintainer email="jakory@media.mit.edu">jakory</maintainer>
+  <license>MIT</license>
+  <url type="website">https://github.com/personal-robots/sar_robot_translation</url>
+  <author email="jakory@media.mit.edu">jakory</author> 
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <run_depend>rospy</run_depend>
+
+</package>
