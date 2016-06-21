@@ -127,17 +127,17 @@ class robot_simulator_node():
 
             # If the command contains angle brackets <>, there's an
             # action for the robot to do.
-            if "<" in data.command:
+            if "<" in data.properties:
                 self.doing_action = True
 
             # If the start/end of the string are not angle brackets,
             # or, if they are but there are multiple sets of brackets,
             # assume we probably have speech too
-            if (not data.command.startswith("<") \
-                    or not data.command.endswith(">")) \
-                or (data.command.startswith("<") \
-                        and data.command.endswith(">") \
-                        and data.command.count("<") > 1):
+            if (not data.properties.startswith("<") \
+                    or not data.properties.endswith(">")) \
+                or (data.properties.startswith("<") \
+                        and data.properties.endswith(">") \
+                        and data.properties.count("<") > 1):
                 self.playing_sound = True
 
             # set the timeout for the sound and action flags to an
